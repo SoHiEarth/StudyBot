@@ -1,4 +1,8 @@
-export function handleEvent_(event) {
+import { YOSHIMIZU_RESPONSES } from "./special_responses.js";
+import { refreshMemberProfile_ } from "./member.js";
+import { getOverview_ } from "./overview.js";
+
+export async function handleEvent_(event, env) {
   if (
     !event || event.type !== "message" ||
     !event.message || event.message.type !== "text"
@@ -22,18 +26,21 @@ export function handleEvent_(event) {
         text.startsWith("/時間")) return null;
     }
     const index = Math.floor(Math.random() * YOSHIMIZU_RESPONSES.length);
-    return YOSHIMIZU_RESPONSES[index];
+    return { handled: true, answer: YOSHIMIZU_RESPONSES[index] };
   }
 
   let answer;
   switch (text) {
+    case "/だれや":
     case "/誰や":
       answer = "うるさい";
       break;
+
     case "/概要":
-      refreshMemberProfile_(event.source, userId);
-      answer = getOverview_();
+      await refreshMemberProfile_(env, event.source, userId);
+      answer = await getOverview_(env);
       break;
+      
     default:
       break;
   }

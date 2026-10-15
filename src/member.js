@@ -1,3 +1,24 @@
+const CONFIG = {
+  DEFAULT_GOAL: 60,
+  MAX_GOAL: 1440
+};
+
+async function fetchDisplayName_(env, source, userId) {
+  const response = await fetch(
+    `https://api.line.me/v2/bot/profile/${encodeURIComponent(userId)}`,
+    {
+      headers: {
+        Authorization: `Bearer ${env.LINE_CHANNEL_ACCESS_TOKEN}`
+      },
+      signal: AbortSignal.timeout(10000)
+    }
+  );
+
+  if (!response.ok) return null;
+  const profile = await response.json();
+  return profile.displayName || null;
+}
+
 function getDB_(env) {
   if (!env?.DB) {
     throw new Error("D1 database binding DB is not configured.");

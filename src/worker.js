@@ -36,7 +36,7 @@ export default {
           if (!event.replyToken) return;
 
           try {
-            const result = await handleEvent_(event);
+            const result = await handleEvent_(event, env);
 
             if (!result || result.handled !== true) {
               return;

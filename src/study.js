@@ -1,3 +1,7 @@
+import { CONFIG } from "./config.js";
+import { ensureMember_, studyMinutes_ } from "./member.js";
+import { formatMinutes_ } from "./date.js";
+
 export async function studyMinutesByUser_(env) {
   const result = await env.DB.prepare(`
     SELECT userId, studyMinutes
@@ -17,23 +21,6 @@ export async function studyMinutesByUser_(env) {
   }
 
   return totals;
-}
-
-export async function studyMinutes_(env, userId) {
-  const id = String(userId || "").trim();
-  if (!id) return 0;
-
-  const row = await env.DB.prepare(`
-    SELECT studyMinutes
-    FROM Members
-    WHERE userId = ?
-    LIMIT 1
-  `).bind(id).first();
-
-  return Math.max(
-    0,
-    Number(row?.studyMinutes) || 0
-  );
 }
 
 export async function addStudyTime_(env, userId, minutes) {

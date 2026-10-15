@@ -2,6 +2,12 @@ import { YOSHIMIZU_RESPONSES } from "./special_responses.js";
 import { refreshMemberProfile_ } from "./member.js";
 import { getOverview_ } from "./overview.js";
 import { getRanking_ } from "./ranking.js";
+import { addStudyTime_ } from "./study.js";
+import {
+  getMyTime_,
+  getTimeByName_,
+  setGoal_
+} from "./goal.js";
 
 export async function handleEvent_(event, env) {
   if (
@@ -31,6 +37,7 @@ export async function handleEvent_(event, env) {
   }
 
   let answer;
+  let match;
   switch (text) {
     case "/だれや":
     case "/誰や":

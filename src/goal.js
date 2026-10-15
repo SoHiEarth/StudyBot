@@ -1,3 +1,7 @@
+import { CONFIG } from "./config.js";
+import { ensureMember_ } from "./member.js";
+import { formatMinutes_ } from "./date.js";
+
 export async function setGoal_(env, userId, minutes) {
   const id = String(userId || "").trim();
   const goal = Number(minutes);

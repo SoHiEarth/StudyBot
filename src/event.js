@@ -8,6 +8,11 @@ import {
   getTimeByName_,
   setGoal_
 } from "./goal.js";
+import {
+  joinRoulette_,
+  startRoulette_,
+  ListRouletteParticipants
+} from "./roulette.js";
 
 export async function handleEvent_(event, env) {
   if (
@@ -65,6 +70,18 @@ export async function handleEvent_(event, env) {
 
     case "/累計ランキング":
       answer = await getRanking_(env, "all");
+      break;
+
+    case "/ルーレット参加":
+      answer = await joinRoulette_(env, source, userId);
+      break;
+
+    case "/ルーレット開始":
+      answer = await startRoulette_(env, source);
+      break;
+
+    case "/ルーレット参加者":
+      answer = await ListRouletteParticipants(env, source);
       break;
 
     default:

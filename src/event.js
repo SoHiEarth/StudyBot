@@ -1,4 +1,4 @@
-import { YOSHIMIZU_RESPONSES } from "./special_responses.js";
+import { pairs, YOSHIMIZU_RESPONSES } from "./special_responses.js";
 import { refreshMemberProfile_ } from "./member.js";
 import { getOverview_ } from "./overview.js";
 import { getRanking_ } from "./ranking.js";
@@ -200,6 +200,8 @@ export async function handleEvent_(event, env) {
           match[1].trim(),
           match[2]
         );
+      } else if (Object.hasOwn(pairs, text)) {
+        answer = pairs[text];
       } else {
         return { handled: false };
       }

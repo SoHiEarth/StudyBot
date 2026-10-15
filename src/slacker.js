@@ -1,5 +1,8 @@
-export async function getSlackerList_() {
-  const allMembers = await members_();
+import { members_, studyMinutes_ } from "./member.js";
+import { today_ } from "./date.js";
+
+export async function getSlackerList_(env) {
+  const allMembers = await members_(env);
   const today = today_();
 
   if (allMembers.length === 0) {
@@ -9,7 +12,7 @@ export async function getSlackerList_() {
   const membersWithTime = await Promise.all(
     allMembers.map(async member => ({
       ...member,
-      minutes: await studyMinutes_(member.userId, today)
+      minutes: await studyMinutes_(env, member.userId, today)
     }))
   );
 
@@ -29,7 +32,7 @@ export async function getSlackerList_() {
   ];
 
   slackers.forEach(member => {
-    lines.push(`- **${member.name}**`);
+    lines.push(`- **${member.displayName}**`);
   });
 
   return lines.join("\n");

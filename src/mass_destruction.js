@@ -1,8 +1,17 @@
-export async function massDestruction_(source) {
+import { CONFIG } from "./config.js";
+import {
+  members_,
+  carryMinutes_,
+  setCarry_
+} from "./member.js";
+import { rouletteMaxPenalty_ } from "./roulette.js";
+import { formatMinutes_ } from "./date.js";
+
+export async function massDestruction_(env, source) {
   // D1 operations are asynchronous, so use your D1-compatible
   // locking mechanism here if concurrent executions are possible.
 
-  const allMembers = await members_();
+  const allMembers = await members_(env);
 
   if (allMembers.length === 0) {
     return "登録メンバーがいません。";
@@ -14,11 +23,11 @@ export async function massDestruction_(source) {
 
   for (const member of allMembers) {
     const maxPenalty = Math.floor(
-      await rouletteMaxPenalty_(member.userId, now)
+      await rouletteMaxPenalty_(env, member.userId, now)
     );
 
     if (maxPenalty < CONFIG.ROULETTE_MIN_PENALTY) {
-      skipped.push(member.name);
+      skipped.push(member.displayName);
       continue;
     }
 
@@ -34,15 +43,16 @@ export async function massDestruction_(source) {
         (upper - CONFIG.ROULETTE_MIN_PENALTY + 1)
       );
 
-    const currentCarry = await carryMinutes_(member.userId);
+    const currentCarry = await carryMinutes_(env, member.userId);
 
     await setCarry_(
+      env,
       member.userId,
       currentCarry + penalty
     );
 
     results.push(
-      `- ${member.name}: **${formatMinutes_(penalty)}**`
+      `- ${member.displayName}: **${formatMinutes_(penalty)}**`
     );
   }
 

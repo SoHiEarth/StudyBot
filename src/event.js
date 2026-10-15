@@ -89,11 +89,11 @@ export async function handleEvent_(event, env) {
       break;
 
     case "/無差別攻撃":
-      answer = await massDestruction_(event.source);
+      answer = await massDestruction_(env, event.source);
       break;
 
     case "/さぼり":
-      answer = await getSlackerList_();
+      answer = await getSlackerList_(env);
       break;
 
     default:

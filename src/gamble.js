@@ -1,4 +1,4 @@
-import { CONFIG } from "./src/config.js";
+import { CONFIG } from "./config.js";
 
 export async function gamble(env, userId, ante, risk = "中") {
   userId = String(userId || "").trim();

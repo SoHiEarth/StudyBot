@@ -16,7 +16,7 @@ import {
 } from "./roulette.js";
 import { massDestruction_ } from "./mass_destruction.js";
 import { getSlackerList_ } from "./slacker.js";
-import { gamble } from "../gamble.js";
+import { gamble } from "./gamble.js";
 
 export async function handleEvent_(event, env) {
   if (

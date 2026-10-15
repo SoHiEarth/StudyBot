@@ -1,7 +1,4 @@
-const CONFIG = {
-  DEFAULT_GOAL: 60,
-  MAX_GOAL: 1440
-};
+import { CONFIG } from "./config.js";
 
 async function fetchDisplayName_(env, source, userId) {
   const response = await fetch(
@@ -35,7 +32,7 @@ function normalizeMember_(row) {
     studyMinutes: Math.max(0, Number(row.studyMinutes) || 0),
     dailyGoal: Math.min(
       CONFIG.MAX_GOAL,
-      Math.max(1, Number(row.dailyGoal) || CONFIG.DEFAULT_GOAL)
+      Math.max(0, Number(row.dailyGoal) || CONFIG.DEFAULT_GOAL)
     ),
     carryMinutes: Math.max(0, Number(row.carryMinutes) || 0)
   };
@@ -43,7 +40,7 @@ function normalizeMember_(row) {
 
 export async function members_(env) {
   const result = await getDB_(env).prepare(`
-    SELECT userId, displayName, dailyGoal
+    SELECT userId, displayName, studyMinutes, dailyGoal
     FROM Members
     WHERE TRIM(userId) <> ''
     ORDER BY rowid

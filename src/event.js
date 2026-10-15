@@ -64,6 +64,8 @@ export async function handleEvent_(event, env) {
 
   return {
     handled: true,
-    answer: answer == null ? "" : String(answer)
+    answer: answer == null || String(answer).trim() === ""
+      ? "処理できる回答がありませんでした。"
+      : String(answer)
   };
 }

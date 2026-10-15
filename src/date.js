@@ -1,4 +1,6 @@
-function formatMinutes_(minutes) {
+import { CONFIG } from "./config.js";
+
+export function formatMinutes_(minutes) {
   const n = Math.max(0, Math.floor(Number(minutes) || 0));
 
   const MINUTES_PER_HOUR = 60;
@@ -31,33 +33,33 @@ function formatMinutes_(minutes) {
   return parts.length ? parts.join('') : '0分';
 }
 
-function today_() {
-  return Utilities.formatDate(new Date(), CONFIG.TIMEZONE, "yyyy-MM-dd");
+export function today_() {
+  return new Intl.DateTimeFormat("sv-SE", {
+    timeZone: CONFIG.TIMEZONE
+  }).format(new Date());
 }
 
 function shiftDate_(date, days) {
   const d = new Date(date + "T00:00:00Z");
   d.setUTCDate(d.getUTCDate() + days);
-  return Utilities.formatDate(d, "UTC", "yyyy-MM-dd");
+  return d.toISOString().slice(0, 10);
 }
 
-function weekStart_(date) {
+export function weekStart_(date) {
   const day = new Date(date + "T00:00:00Z").getUTCDay();
   const diff = day === 0 ? -6 : 1 - day;
   return shiftDate_(date, diff);
 }
 
-function monthStart_(date) {
+export function monthStart_(date) {
   return date.slice(0, 7) + "-01";
 }
 
-function normalizeDate_(value) {
+export function normalizeDate_(value) {
   if (value instanceof Date && !isNaN(value.getTime())) {
-    return Utilities.formatDate(
-      value,
-      CONFIG.TIMEZONE,
-      "yyyy-MM-dd"
-    );
+    return new Intl.DateTimeFormat("sv-SE", {
+      timeZone: CONFIG.TIMEZONE
+    }).format(value);
   }
   const s = String(value || "").trim();
   const match = s.match(/^(\d{4})[-/](\d{1,2})[-/](\d{1,2})$/);

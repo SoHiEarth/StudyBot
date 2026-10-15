@@ -116,6 +116,8 @@ export async function handleEvent_(event, env) {
         } else {
           answer = await getMyTime_(env, userId);
         }
+      } else if (/^\/巻き込む\s+確定$/.test(text)) {
+        answer = ForceJoinAll(event.source, userId);
       } else {
         return { handled: false };
       }

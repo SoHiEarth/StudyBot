@@ -24,6 +24,8 @@ export async function handleEvent_(event, env) {
     return { handled: false };
   }
 
+  const source = event.source;
+
   if (userId == "Ud4b21d16769707e877baea669277ea93") {
     if (event.type === "message" || event.message?.type === "text") {
       if (text.startsWith("/追加") ||
@@ -64,12 +66,32 @@ export async function handleEvent_(event, env) {
     case "/累計ランキング":
       answer = await getRanking_(env, "all");
       break;
-      
+
     default:
-      if ((match = text.match(/^\/追加\s+(\d+)$/))) {
-        answer = await addStudyTime_(env, userId, Number(match[1]));
-      } else if ((match = text.match(/^\/目標\s+(\d+)$/))) {
-        answer = await setGoal_(env, userId, Number(match[1]));
+      if ((match = text.match(/^\/追加(?:\s+(\d+))?$/))) {
+        const minutes = match[1];
+        if (minutes) {
+          answer = await addStudyTime_(env, userId, Number(minutes));
+        } else {
+          answer = [
+            "使い方",
+            "---",
+            "/追加 <勉強時間>",
+            "追加する勉強時間を指定してください。"
+          ].join("\n");
+        }
+      } else if ((match = text.match(/^\/目標(?:\s+(\d+))?$/))) {
+        const minutes = match[1];
+        if (minutes) {
+          answer = await setGoal_(env, userId, Number(minutes));
+        } else {
+          answer = [
+            "使い方",
+            "---",
+            "/目標 <目標時間>",
+            "目標時間を指定してください。"
+          ].join("\n");
+        }
       } else if ((match = text.match(/^\/時間(?:\s+(.+))?$/))) {
         const username = match[1];
         if (username) {

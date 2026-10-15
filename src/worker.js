@@ -54,9 +54,12 @@ export default {
             }
           } catch (error) {
             console.error(
-              "Event processing failed:",
-              event.webhookEventId || "(no event ID)",
-              error
+              "Event processing failed",
+              JSON.stringify({
+                eventId: event.webhookEventId || null,
+                command: event.message?.text?.trim() || null,
+                error: serializeError_(error)
+              })
             );
           }
         })
@@ -66,6 +69,21 @@ export default {
     return new Response("OK", { status: 200 });
   }
 };
+
+function serializeError_(error) {
+  if (error instanceof Error) {
+    return {
+      name: error.name,
+      message: error.message,
+      stack: error.stack
+    };
+  }
+
+  return {
+    name: typeof error,
+    message: String(error)
+  };
+}
 
 async function verifySignature(body, signature, secret) {
   if (!secret) return false;

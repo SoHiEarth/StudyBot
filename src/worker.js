@@ -1,5 +1,5 @@
-import { formatAnswer_ } from "./answer";
-import { handleEvent_ } from "./event";
+import { formatAnswer_ } from "./answer.js";
+import { handleEvent_ } from "./event.js";
 
 export default {
   async fetch(request, env, ctx) {

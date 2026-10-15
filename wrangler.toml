@@ -5,3 +5,8 @@ compatibility_date = "2026-10-01"
 [observability.logs]
 enabled = true
 invocation_logs = true
+
+[[d1_databases]]
+binding = "DB"
+database_name = "study-bot-data"
+database_id = "b9d282b9-b607-42bb-88d8-c69aa31a89a8"

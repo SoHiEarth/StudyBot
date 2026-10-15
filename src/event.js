@@ -27,6 +27,9 @@ export function handleEvent_(event) {
 
   let answer;
   switch (text) {
+    case "/誰や":
+      answer = "うるさい";
+      break;
     case "/概要":
       refreshMemberProfile_(event.source, userId);
       answer = getOverview_();

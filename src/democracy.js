@@ -21,11 +21,13 @@ export function db_(env) {
 
 export async function ensureSocietyTables_(env) {
   await db_(env).batch([
+    db_(env).prepare(`CREATE TABLE IF NOT EXISTS AppSetting (key TEXT PRIMARY KEY, value TEXT NOT NULL)`),
     db_(env).prepare(`CREATE TABLE IF NOT EXISTS SocietyState (key TEXT PRIMARY KEY, value TEXT NOT NULL)`),
-    db_(env).prepare(`CREATE TABLE IF NOT EXISTS SocietyVotes (userId TEXT PRIMARY KEY, system TEXT NOT NULL, updatedAt INTEGER NOT NULL)`),
+    db_(env).prepare(`CREATE TABLE IF NOT EXISTS Elections (userId TEXT PRIMARY KEY, system TEXT NOT NULL)`),
     db_(env).prepare(`CREATE TABLE IF NOT EXISTS PolicyVotes (userId TEXT NOT NULL, policy TEXT NOT NULL, vote TEXT NOT NULL, updatedAt INTEGER NOT NULL, PRIMARY KEY (userId, policy))`),
     db_(env).prepare(`CREATE TABLE IF NOT EXISTS ExecutionVotes (userId TEXT NOT NULL, targetUserId TEXT NOT NULL, vote TEXT NOT NULL, updatedAt INTEGER NOT NULL, PRIMARY KEY (userId, targetUserId))`)
   ]);
+  await db_(env).prepare(`INSERT INTO AppSetting (key, value) SELECT key, value FROM SocietyState WHERE key = 'SOCIETY_SYSTEM' ON CONFLICT(key) DO NOTHING`).run();
 }
 
 export async function state_(env, key) {
@@ -38,7 +40,8 @@ export async function setState_(env, key, value) {
 }
 
 export async function societySystem_(env) {
-  return await state_(env, "SOCIETY_SYSTEM") || "normal";
+  const row = await db_(env).prepare("SELECT value FROM AppSetting WHERE key = ?").bind("SOCIETY_SYSTEM").first();
+  return row?.value || "normal";
 }
 
 export function threshold_(count) { return Math.floor(count / 2) + 1; }
@@ -47,7 +50,7 @@ export function memberIdSet_(members) { return new Set(members.map(member => Str
 async function voteCounts_(env, members) {
   const counts = Object.fromEntries(Object.keys(SOCIETY_SYSTEMS_).map(system => [system, 0]));
   const ids = memberIdSet_(members);
-  const result = await db_(env).prepare("SELECT userId, system FROM SocietyVotes ORDER BY updatedAt, rowid").all();
+  const result = await db_(env).prepare("SELECT userId, system FROM Elections ORDER BY rowid").all();
   const votes = new Map();
   for (const row of result.results || []) {
     const userId = String(row.userId || "").trim();
@@ -75,7 +78,7 @@ export async function voteForSocietySystem_(env, userId, system) {
   const members = await members_(env);
   if (!members.length) return "登録メンバーがいません。";
   if (!memberIdSet_(members).has(id)) return "登録メンバーのみ投票できます。";
-  await db_(env).prepare(`INSERT INTO SocietyVotes (userId, system, updatedAt) VALUES (?, ?, ?) ON CONFLICT(userId) DO UPDATE SET system = excluded.system, updatedAt = excluded.updatedAt`).bind(id, system, Date.now()).run();
+  await db_(env).prepare(`INSERT INTO Elections (userId, system) VALUES (?, ?) ON CONFLICT(userId) DO UPDATE SET system = excluded.system`).bind(id, system).run();
   const counts = await voteCounts_(env, members);
   const threshold = threshold_(members.length);
   const lines = ["## 社会制度への投票", "---", SOCIETY_SYSTEMS_[system] + "に投票しました。", "", "登録メンバー：" + members.length + "人", "可決に必要な票数：" + threshold + "票", ""];
@@ -87,7 +90,7 @@ export async function voteForSocietySystem_(env, userId, system) {
   try {
     if (passed === "communism") await applyCommunism_(env, members);
     if (passed === "capitalism") await applyCapitalism_(env, members);
-    await setState_(env, "SOCIETY_SYSTEM", passed);
+    await db_(env).prepare(`INSERT INTO AppSetting (key, value) VALUES (?, ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value`).bind("SOCIETY_SYSTEM", passed).run();
   } catch (error) {
     console.error("Failed to apply society system:", error);
     return lines.concat(["", "制度変更の処理に失敗しました。", "現在の体制は変更されていません。", "管理者に確認してください。"]).join("\n");

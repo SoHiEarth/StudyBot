@@ -14,6 +14,9 @@ import {
   ListRouletteParticipants,
   ForceJoinAll
 } from "./roulette.js";
+import { massDestruction_ } from "./mass_destruction.js";
+import { getSlackerList_ } from "./slacker.js";
+import { gamble } from "../gamble.js";
 
 export async function handleEvent_(event, env) {
   if (
@@ -85,6 +88,14 @@ export async function handleEvent_(event, env) {
       answer = await ListRouletteParticipants(env, source);
       break;
 
+    case "/無差別攻撃":
+      answer = await massDestruction_(event.source);
+      break;
+
+    case "/さぼり":
+      answer = await getSlackerList_();
+      break;
+
     default:
       if ((match = text.match(/^\/追加(?:\s+(\d+))?$/))) {
         const minutes = match[1];
@@ -119,6 +130,17 @@ export async function handleEvent_(event, env) {
         }
       } else if (/^\/巻き込む\s+確定$/.test(text)) {
         answer = ForceJoinAll(env, event.source, userId);
+      } else if (
+        (match = text.match(
+          /^\/賭ける\s+(\d+)(?:\s+(低|中|高|狂気))?$/
+        ))
+      ) {
+        answer = await gamble(
+          env,
+          userId,
+          Number(match[1]),
+          match[2] || "中"
+        );
       } else {
         return { handled: false };
       }

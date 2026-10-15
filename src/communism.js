@@ -35,7 +35,7 @@ export async function perestroika_(env, forRevolution = false) {
   await setState_(env, "perostroikaCooldown", Date.now());
   const before = updates.reduce((sum, update) => sum + Number(update.member.carryMinutes), 0);
   const after = updates.reduce((sum, update) => sum + update.minutes, 0);
-  return ["🕊️ ペレストロイカ完了！", "---", "全メンバーの持ち越し時間を半減しました。", `対象人数：${updates.length}人`, `変更前合計：${before}分`, `変更後合計：${after}分`, `削減時間：${before - after}分`].join("\n");
+  return ["## 🕊️ ペレストロイカ完了！", "---", "全メンバーの持ち越し時間を半減しました。", `対象人数：**${updates.length}人**`, `変更前合計：**${before}分**`, `**変更後合計：**${after}分**`, `削減時間：**${before - after}分**`].join("\n");
 }
 
 export async function revolutionBonus_(env) {

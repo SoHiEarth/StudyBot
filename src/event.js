@@ -17,6 +17,15 @@ import {
 import { massDestruction_ } from "./mass_destruction.js";
 import { getSlackerList_ } from "./slacker.js";
 import { gamble } from "./gamble.js";
+import {
+  applyCurrentSocietySystemTraits_,
+  getDemocracyPolicyStatus_,
+  getSocietyStatus_,
+  voteForSocietySystem_,
+  voteOnPolicy_
+} from "./democracy.js";
+import { perestroika_ } from "./communism.js";
+import { voteOnExecution_, getExecutionStatus_ } from "./execution.js";
 
 export async function handleEvent_(event, env) {
   if (
@@ -96,6 +105,26 @@ export async function handleEvent_(event, env) {
       answer = await getSlackerList_(env);
       break;
 
+    case "/社会":
+      answer = await getSocietyStatus_(env);
+      break;
+
+    case "/政策":
+      answer = await getDemocracyPolicyStatus_(env);
+      break;
+
+    case "/革命":
+      answer = await applyCurrentSocietySystemTraits_(env);
+      break;
+
+    case "/ペレストロイカ":
+      answer = await perestroika_(env);
+      break;
+
+    case "/処刑状況":
+      answer = await getExecutionStatus_(env);
+      break;
+
     default:
       if ((match = text.match(/^\/追加(?:\s+(\d+))?$/))) {
         const minutes = match[1];
@@ -132,6 +161,21 @@ export async function handleEvent_(event, env) {
         answer = ForceJoinAll(env, event.source, userId);
       } else if (
         (match = text.match(
+          /^\/社会\s+(共産主義|資本主義|民主主義)$/
+        ))
+      ) {
+        const systemMap = {
+          "共産主義": "communism",
+          "資本主義": "capitalism",
+          "民主主義": "democracy"
+        };
+        answer = await voteForSocietySystem_(
+          env,
+          userId,
+          systemMap[match[1]]
+        );
+      } else if (
+        (match = text.match(
           /^\/賭ける\s+(\d+)(?:\s+(低|中|高|狂気))?$/
         ))
       ) {
@@ -140,6 +184,21 @@ export async function handleEvent_(event, env) {
           userId,
           Number(match[1]),
           match[2] || "中"
+        );
+      } else if (
+        (match = text.match(
+          /^\/政策\s+(ペナルティ軽減|抽選確率アップ)\s+(賛成|反対)$/
+        ))
+      ) {
+        answer = await voteOnPolicy_(env, userId, match[1], match[2]);
+      } else if (
+        (match = text.match(/^\/処刑\s+(.+?)\s+(賛成|反対)$/))
+      ) {
+        answer = await voteOnExecution_(
+          env,
+          userId,
+          match[1].trim(),
+          match[2]
         );
       } else {
         return { handled: false };

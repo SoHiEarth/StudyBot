@@ -40,7 +40,7 @@ function normalizeMember_(row) {
 
 export async function members_(env) {
   const result = await getDB_(env).prepare(`
-    SELECT userId, displayName, studyMinutes, dailyGoal
+    SELECT userId, displayName, studyMinutes, dailyGoal, carryMinutes
     FROM Members
     WHERE TRIM(userId) <> ''
     ORDER BY rowid

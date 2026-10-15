@@ -43,19 +43,19 @@ export async function handleEvent_(event, env) {
       break;
 
     case "/ランキング":
-      answer = getRanking_("today");
+      answer = await getRanking_(env, "today");
       break;
 
     case "/週間ランキング":
-      answer = getRanking_("week");
+      answer = await getRanking_(env, "week");
       break;
 
     case "/月間ランキング":
-      answer = getRanking_("month");
+      answer = await getRanking_(env, "month");
       break;
 
     case "/累計ランキング":
-      answer = getRanking_("all");
+      answer = await getRanking_(env, "all");
       break;
       
     default:

@@ -50,10 +50,12 @@ export async function handleEvent_(event, env) {
         text.startsWith("/目標") ||
         text.startsWith("/社会") ||
         text.startsWith("/概要") ||
-        text.startsWith("/時間")) return null;
+        text.startsWith("/時間")) {
+      }
+    } else {
+      const index = Math.floor(Math.random() * YOSHIMIZU_RESPONSES.length);
+      return { handled: true, answer: YOSHIMIZU_RESPONSES[index] };
     }
-    const index = Math.floor(Math.random() * YOSHIMIZU_RESPONSES.length);
-    return { handled: true, answer: YOSHIMIZU_RESPONSES[index] };
   }
 
   let answer;

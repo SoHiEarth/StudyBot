@@ -59,11 +59,6 @@ export async function handleEvent_(event, env) {
   let answer;
   let match;
   switch (text) {
-    case "/だれや":
-    case "/誰や":
-      answer = "うるさい";
-      break;
-
     case "/概要":
       await refreshMemberProfile_(env, event.source, userId);
       answer = await getOverview_(env);

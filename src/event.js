@@ -59,7 +59,20 @@ export async function handleEvent_(event, env) {
       break;
       
     default:
-      break;
+      if ((match = text.match(/^\/追加\s+(\d+)$/))) {
+        answer = await addStudyTime_(env, userId, Number(match[1]));
+      } else if ((match = text.match(/^\/目標\s+(\d+)$/))) {
+        answer = await setGoal_(env, userId, Number(match[1]));
+      } else if ((match = text.match(/^\/時間(?:\s+(.+))?$/))) {
+        const username = match[1];
+        if (username) {
+          answer = await getTimeByName_(env, username);
+        } else {
+          answer = await getMyTime_(env, userId);
+        }
+      } else {
+        return { handled: false };
+      }
   }
 
   return {

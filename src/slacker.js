@@ -1,4 +1,4 @@
-async function getSlackerList_() {
+export async function getSlackerList_() {
   const allMembers = await members_();
   const today = today_();
 

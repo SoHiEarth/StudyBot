@@ -1,4 +1,4 @@
-async function massDestruction_(source) {
+export async function massDestruction_(source) {
   // D1 operations are asynchronous, so use your D1-compatible
   // locking mechanism here if concurrent executions are possible.
 

@@ -1,6 +1,7 @@
 import { YOSHIMIZU_RESPONSES } from "./special_responses.js";
 import { refreshMemberProfile_ } from "./member.js";
 import { getOverview_ } from "./overview.js";
+import { getRanking_ } from "./ranking.js";
 
 export async function handleEvent_(event, env) {
   if (
@@ -39,6 +40,22 @@ export async function handleEvent_(event, env) {
     case "/概要":
       await refreshMemberProfile_(env, event.source, userId);
       answer = await getOverview_(env);
+      break;
+
+    case "/ランキング":
+      answer = getRanking_("today");
+      break;
+
+    case "/週間ランキング":
+      answer = getRanking_("week");
+      break;
+
+    case "/月間ランキング":
+      answer = getRanking_("month");
+      break;
+
+    case "/累計ランキング":
+      answer = getRanking_("all");
       break;
       
     default:

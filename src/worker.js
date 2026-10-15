@@ -34,10 +34,8 @@ export default {
       Promise.all(
         events.map(async (event) => {
           if (!event.replyToken) return;
-
           try {
             const result = await handleEvent_(event, env);
-
             if (!result || result.handled !== true) {
               return;
             }

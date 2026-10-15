@@ -197,6 +197,16 @@ export async function handleEvent_(event, env) {
           match[1].trim(),
           match[2]
         );
+      } else if ((match = text.match(/^\/教育\s+(.+)$/))) {
+        answer = {
+          imageBeforeText: true,
+          text: `${match[1]}っているのかな？`
+        };
+      } else if ((match = text.match(/^\/否定\s+(.+)$/))) {
+        answer = {
+          imageBeforeText: true,
+          text: `${match[1]}っていらないよね。`
+        };
       } else if (Object.hasOwn(pairs, text)) {
         answer = pairs[text];
       } else {
@@ -206,8 +216,10 @@ export async function handleEvent_(event, env) {
 
   return {
     handled: true,
-    answer: answer == null || String(answer).trim() === ""
-      ? "処理できる回答がありませんでした。"
-      : String(answer)
+    answer: typeof answer === "object" && answer !== null
+      ? answer
+      : answer == null || String(answer).trim() === ""
+        ? "処理できる回答がありませんでした。"
+        : String(answer)
   };
 }

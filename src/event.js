@@ -11,7 +11,8 @@ import {
 import {
   joinRoulette_,
   startRoulette_,
-  ListRouletteParticipants
+  ListRouletteParticipants,
+  ForceJoinAll
 } from "./roulette.js";
 
 export async function handleEvent_(event, env) {
@@ -117,7 +118,7 @@ export async function handleEvent_(event, env) {
           answer = await getMyTime_(env, userId);
         }
       } else if (/^\/巻き込む\s+確定$/.test(text)) {
-        answer = ForceJoinAll(event.source, userId);
+        answer = ForceJoinAll(env, event.source, userId);
       } else {
         return { handled: false };
       }

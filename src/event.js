@@ -153,7 +153,7 @@ export async function handleEvent_(event, env) {
           answer = await getMyTime_(env, userId);
         }
       } else if (/^\/巻き込む\s+確定$/.test(text)) {
-        answer = ForceJoinAll(env, event.source, userId);
+        answer = await ForceJoinAll(env, event.source, userId);
       } else if (
         (match = text.match(
           /^\/社会\s+(共産主義|資本主義|民主主義)$/

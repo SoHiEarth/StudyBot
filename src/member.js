@@ -99,8 +99,7 @@ export async function ensureMember_(env, userId, source) {
             OR displayName = '名前未設定'
           )
       `).bind(displayName, id).run();
-
-      member = await findMember_(env, id);
+      member.displayName = displayName;
     }
   }
 
@@ -136,8 +135,7 @@ export async function refreshMemberProfile_(env, source, userId) {
       )
   `).bind(displayName, String(userId).trim()).run();
 
-  const updated = await findMember_(env, userId);
-  return updated?.displayName || member.displayName;
+  return displayName;
 }
 
 export async function studyMinutes_(env, userId) {
@@ -199,6 +197,7 @@ export async function processDailyPenalty(env) {
   const members = await members_(env);
   let settledCount = 0;
 
+  const settlements = [];
   for (const member of members) {
     const userId = String(member.userId || "").trim();
     if (!userId) continue;
@@ -212,28 +211,34 @@ export async function processDailyPenalty(env) {
     const target = Math.min(CONFIG.DAILY_CAP, goal + previousCarry);
     const nextCarry = Math.max(0, target - actual);
 
-    const insert = await db.prepare(`
+    settlements.push({
+      member,
+      statement: db.prepare(`
       INSERT OR IGNORE INTO DailySettlements
         (date, userId, studyMinutes, targetMinutes, carryMinutes)
       VALUES (?, ?, ?, ?, ?)
-    `).bind(
-      yesterday,
-      userId,
-      actual,
-      target,
+    `).bind(yesterday, userId, actual, target, nextCarry),
       nextCarry
-    ).run();
+    });
+  }
 
-    if (insert.meta.changes === 0) continue;
+  const inserts = settlements.length
+    ? await db.batch(settlements.map(settlement => settlement.statement))
+    : [];
+  const updates = [];
+  for (let index = 0; index < settlements.length; index++) {
+    if (inserts[index].meta.changes === 0) continue;
 
-    await db.prepare(`
+    const { member, nextCarry } = settlements[index];
+    updates.push(db.prepare(`
       UPDATE Members
       SET carryMinutes = ?, studyMinutes = 0
       WHERE userId = ?
-    `).bind(nextCarry, userId).run();
-
-    settledCount++;
+    `).bind(nextCarry, member.userId));
   }
+
+  if (updates.length) await db.batch(updates);
+  settledCount = updates.length;
 
   return {
     date: yesterday,

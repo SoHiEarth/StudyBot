@@ -14,33 +14,43 @@ export const POLICY_CONFIG_ = {
   lottery_boost: { name: "抽選確率アップ", property: "DEMOCRACY_LOTTERY_BOOST" }
 };
 
+const societyTablesReady_ = new WeakMap();
+
 export function db_(env) {
   if (!env?.DB) throw new Error("D1 database binding DB is not configured.");
   return env.DB;
 }
 
 export async function ensureSocietyTables_(env) {
-  await db_(env).batch([
-    db_(env).prepare(`CREATE TABLE IF NOT EXISTS AppSettings (key TEXT PRIMARY KEY, value TEXT NOT NULL)`),
-    db_(env).prepare(`CREATE TABLE IF NOT EXISTS SocietyState (key TEXT PRIMARY KEY, value TEXT NOT NULL)`),
-    db_(env).prepare(`CREATE TABLE IF NOT EXISTS Elections (userId TEXT PRIMARY KEY, system TEXT NOT NULL)`),
-    db_(env).prepare(`CREATE TABLE IF NOT EXISTS PolicyVotes (userId TEXT NOT NULL, policy TEXT NOT NULL, vote TEXT NOT NULL, updatedAt INTEGER NOT NULL, PRIMARY KEY (userId, policy))`),
-    db_(env).prepare(`CREATE TABLE IF NOT EXISTS ExecutionVotes (userId TEXT NOT NULL, targetUserId TEXT NOT NULL, vote TEXT NOT NULL, updatedAt INTEGER NOT NULL, PRIMARY KEY (userId, targetUserId))`)
-  ]);
-  await db_(env).prepare(`INSERT INTO AppSettings (key, value) SELECT key, value FROM SocietyState WHERE key = 'SOCIETY_SYSTEM' ON CONFLICT(key) DO NOTHING`).run();
+  const database = db_(env);
+  let ready = societyTablesReady_.get(database);
+  if (!ready) {
+    ready = (async () => {
+      await database.batch([
+        database.prepare(`CREATE TABLE IF NOT EXISTS AppSettings (key TEXT PRIMARY KEY, value TEXT NOT NULL)`),
+        database.prepare(`CREATE TABLE IF NOT EXISTS SocietyState (key TEXT PRIMARY KEY, value TEXT NOT NULL)`),
+        database.prepare(`CREATE TABLE IF NOT EXISTS Elections (userId TEXT PRIMARY KEY, system TEXT NOT NULL)`),
+        database.prepare(`CREATE TABLE IF NOT EXISTS PolicyVotes (userId TEXT NOT NULL, policy TEXT NOT NULL, vote TEXT NOT NULL, updatedAt INTEGER NOT NULL, PRIMARY KEY (userId, policy))`),
+        database.prepare(`CREATE TABLE IF NOT EXISTS ExecutionVotes (userId TEXT NOT NULL, targetUserId TEXT NOT NULL, vote TEXT NOT NULL, updatedAt INTEGER NOT NULL, PRIMARY KEY (userId, targetUserId))`)
+      ]);
+      await database.prepare(`INSERT INTO AppSettings (key, value) SELECT key, value FROM SocietyState ON CONFLICT(key) DO NOTHING`).run();
+    })();
+    societyTablesReady_.set(database, ready);
+  }
+  await ready;
 }
 
 export async function state_(env, key) {
-  const row = await db_(env).prepare("SELECT value FROM SocietyState WHERE key = ?").bind(key).first();
+  const row = await db_(env).prepare("SELECT value FROM AppSettings WHERE key = ?").bind(key).first();
   return row?.value ?? null;
 }
 
 export async function setState_(env, key, value) {
-  await db_(env).prepare(`INSERT INTO SocietyState (key, value) VALUES (?, ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value`).bind(key, String(value)).run();
+  await db_(env).prepare(`INSERT INTO AppSettings (key, value) VALUES (?, ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value`).bind(key, String(value)).run();
 }
 
 export async function societySystem_(env) {
-  const row = await db_(env).prepare("SELECT value FROM AppSettings  WHERE key = ?").bind("SOCIETY_SYSTEM").first();
+  const row = await db_(env).prepare("SELECT value FROM AppSettings WHERE key = ?").bind("SOCIETY_SYSTEM").first();
   return row?.value || "normal";
 }
 

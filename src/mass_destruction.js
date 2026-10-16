@@ -1,10 +1,9 @@
 import { CONFIG } from "./config.js";
 import {
   members_,
-  carryMinutes_,
-  setCarry_
 } from "./member.js";
-import { rouletteMaxPenalty_ } from "./roulette.js";
+import { db_ } from "./democracy.js";
+import { rouletteMaxPenaltyForMember_ } from "./roulette.js";
 import { formatMinutes_ } from "./date.js";
 
 export async function massDestruction_(env, source) {
@@ -20,10 +19,11 @@ export async function massDestruction_(env, source) {
   const now = new Date();
   const results = [];
   const skipped = [];
+  const updates = [];
 
   for (const member of allMembers) {
     const maxPenalty = Math.floor(
-      await rouletteMaxPenalty_(env, member.userId, now)
+      rouletteMaxPenaltyForMember_(member, now)
     );
 
     if (maxPenalty < CONFIG.ROULETTE_MIN_PENALTY) {
@@ -43,12 +43,12 @@ export async function massDestruction_(env, source) {
         (upper - CONFIG.ROULETTE_MIN_PENALTY + 1)
       );
 
-    const currentCarry = await carryMinutes_(env, member.userId);
-
-    await setCarry_(
-      env,
-      member.userId,
-      currentCarry + penalty
+    updates.push(
+      db_(env).prepare(`
+        UPDATE Members
+        SET carryMinutes = COALESCE(carryMinutes, 0) + ?
+        WHERE userId = ?
+      `).bind(penalty, member.userId)
     );
 
     results.push(
@@ -59,6 +59,8 @@ export async function massDestruction_(env, source) {
   if (results.length === 0) {
     return "達成可能なペナルティーを課せるメンバーがいません。";
   }
+
+  await db_(env).batch(updates);
 
   const message = [
     "## 無差別攻撃発動",

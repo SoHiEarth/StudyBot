@@ -1,20 +1,16 @@
-import { members_, studyMinutes_ } from "./member.js";
-import { today_ } from "./date.js";
+import { members_ } from "./member.js";
 
 export async function getSlackerList_(env) {
   const allMembers = await members_(env);
-  const today = today_();
 
   if (allMembers.length === 0) {
     return "メンバーがまだ登録されていません。";
   }
 
-  const membersWithTime = await Promise.all(
-    allMembers.map(async member => ({
-      ...member,
-      minutes: await studyMinutes_(env, member.userId, today)
-    }))
-  );
+  const membersWithTime = allMembers.map(member => ({
+    ...member,
+    minutes: Math.max(0, Number(member.studyMinutes) || 0)
+  }));
 
   const slackers = membersWithTime.filter(
     member => member.minutes === 0

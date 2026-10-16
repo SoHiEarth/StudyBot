@@ -60,6 +60,10 @@ export async function rouletteMaxPenalty_(env, userId, now) {
     LIMIT 1
   `).bind(id).first();
 
+  return rouletteMaxPenaltyForMember_(member, now);
+}
+
+export function rouletteMaxPenaltyForMember_(member, now) {
   if (!member) return 0;
 
   const actual = Math.max(
@@ -133,15 +137,18 @@ export async function startRoulette_(env, source) {
   );
 
   const result = await db.prepare(`
-    SELECT userId, displayName
-    FROM RouletteParticipants
-    WHERE chatKey = ?
-    ORDER BY joinedAt ASC
+    SELECT p.userId, p.displayName,
+           m.studyMinutes, m.dailyGoal, m.carryMinutes
+    FROM RouletteParticipants p
+    LEFT JOIN Members m ON m.userId = p.userId
+    WHERE p.chatKey = ?
+    ORDER BY p.joinedAt ASC
   `).bind(chatKey).all();
 
   const participants = (result.results || []).map(row => ({
     userId: String(row.userId),
-    name: String(row.displayName || "名前未設定")
+    name: String(row.displayName || "名前未設定"),
+    member: row
   }));
 
   if (participants.length < 2) {
@@ -154,11 +161,7 @@ export async function startRoulette_(env, source) {
   const eligible = [];
 
   for (const participant of participants) {
-    const maxPenalty = await rouletteMaxPenalty_(
-      env,
-      participant.userId,
-      now
-    );
+    const maxPenalty = rouletteMaxPenaltyForMember_(participant.member, now);
 
     if (maxPenalty >= CONFIG.ROULETTE_MIN_PENALTY) {
       eligible.push({

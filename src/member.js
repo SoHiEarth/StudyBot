@@ -1,4 +1,5 @@
 import { CONFIG } from "./config.js";
+import { shiftDate_, today_ } from "./date.js";
 
 async function fetchDisplayName_(env, source, userId) {
   const response = await fetch(
@@ -178,4 +179,64 @@ export async function setCarry_(env, userId, minutes) {
     SET carryMinutes = ?
     WHERE userId = ?
   `).bind(value, id).run();
+}
+
+export async function processDailyPenalty(env) {
+  const db = getDB_(env);
+  const yesterday = shiftDate_(today_(), -1);
+
+  await db.prepare(`
+    CREATE TABLE IF NOT EXISTS DailySettlements (
+      date TEXT NOT NULL,
+      userId TEXT NOT NULL,
+      studyMinutes INTEGER NOT NULL,
+      targetMinutes INTEGER NOT NULL,
+      carryMinutes INTEGER NOT NULL,
+      PRIMARY KEY (date, userId)
+    )
+  `).run();
+
+  const members = await members_(env);
+  let settledCount = 0;
+
+  for (const member of members) {
+    const userId = String(member.userId || "").trim();
+    if (!userId) continue;
+
+    const actual = Math.max(0, Math.floor(Number(member.studyMinutes) || 0));
+    const previousCarry = Math.max(
+      0,
+      Math.floor(Number(member.carryMinutes) || 0)
+    );
+    const goal = Math.max(0, Math.floor(Number(member.dailyGoal) || 0));
+    const target = Math.min(CONFIG.DAILY_CAP, goal + previousCarry);
+    const nextCarry = Math.max(0, target - actual);
+
+    const insert = await db.prepare(`
+      INSERT OR IGNORE INTO DailySettlements
+        (date, userId, studyMinutes, targetMinutes, carryMinutes)
+      VALUES (?, ?, ?, ?, ?)
+    `).bind(
+      yesterday,
+      userId,
+      actual,
+      target,
+      nextCarry
+    ).run();
+
+    if (insert.meta.changes === 0) continue;
+
+    await db.prepare(`
+      UPDATE Members
+      SET carryMinutes = ?, studyMinutes = 0
+      WHERE userId = ?
+    `).bind(nextCarry, userId).run();
+
+    settledCount++;
+  }
+
+  return {
+    date: yesterday,
+    settledCount
+  };
 }

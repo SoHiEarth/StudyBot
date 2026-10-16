@@ -1,5 +1,6 @@
 import { formatAnswer_ } from "./answer.js";
 import { handleEvent_ } from "./event.js";
+import { processDailyPenalty } from "./member.js";
 
 export default {
   async fetch(request, env, ctx) {
@@ -67,6 +68,16 @@ export default {
     );
 
     return new Response("OK", { status: 200 });
+  },
+
+  async scheduled(event, env) {
+    try {
+      const result = await processDailyPenalty(env);
+      console.log("Daily penalty processed", result);
+    } catch (error) {
+      console.error("Daily penalty processing failed", error);
+      throw error;
+    }
   }
 };
 

@@ -2,6 +2,9 @@ name = "studybot"
 main = "src/worker.js" 
 compatibility_date = "2026-10-01"
 
+[triggers]
+crons = ["0 15 * * *"]
+
 [observability.logs]
 enabled = true
 invocation_logs = true

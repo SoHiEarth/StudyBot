@@ -21,13 +21,13 @@ export function db_(env) {
 
 export async function ensureSocietyTables_(env) {
   await db_(env).batch([
-    db_(env).prepare(`CREATE TABLE IF NOT EXISTS AppSetting (key TEXT PRIMARY KEY, value TEXT NOT NULL)`),
+    db_(env).prepare(`CREATE TABLE IF NOT EXISTS AppSettings (key TEXT PRIMARY KEY, value TEXT NOT NULL)`),
     db_(env).prepare(`CREATE TABLE IF NOT EXISTS SocietyState (key TEXT PRIMARY KEY, value TEXT NOT NULL)`),
     db_(env).prepare(`CREATE TABLE IF NOT EXISTS Elections (userId TEXT PRIMARY KEY, system TEXT NOT NULL)`),
     db_(env).prepare(`CREATE TABLE IF NOT EXISTS PolicyVotes (userId TEXT NOT NULL, policy TEXT NOT NULL, vote TEXT NOT NULL, updatedAt INTEGER NOT NULL, PRIMARY KEY (userId, policy))`),
     db_(env).prepare(`CREATE TABLE IF NOT EXISTS ExecutionVotes (userId TEXT NOT NULL, targetUserId TEXT NOT NULL, vote TEXT NOT NULL, updatedAt INTEGER NOT NULL, PRIMARY KEY (userId, targetUserId))`)
   ]);
-  await db_(env).prepare(`INSERT INTO AppSetting (key, value) SELECT key, value FROM SocietyState WHERE key = 'SOCIETY_SYSTEM' ON CONFLICT(key) DO NOTHING`).run();
+  await db_(env).prepare(`INSERT INTO AppSettings (key, value) SELECT key, value FROM SocietyState WHERE key = 'SOCIETY_SYSTEM' ON CONFLICT(key) DO NOTHING`).run();
 }
 
 export async function state_(env, key) {
@@ -40,7 +40,7 @@ export async function setState_(env, key, value) {
 }
 
 export async function societySystem_(env) {
-  const row = await db_(env).prepare("SELECT value FROM AppSetting WHERE key = ?").bind("SOCIETY_SYSTEM").first();
+  const row = await db_(env).prepare("SELECT value FROM AppSettings  WHERE key = ?").bind("SOCIETY_SYSTEM").first();
   return row?.value || "normal";
 }
 
@@ -90,7 +90,7 @@ export async function voteForSocietySystem_(env, userId, system) {
   try {
     if (passed === "communism") await applyCommunism_(env, members);
     if (passed === "capitalism") await applyCapitalism_(env, members);
-    await db_(env).prepare(`INSERT INTO AppSetting (key, value) VALUES (?, ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value`).bind("SOCIETY_SYSTEM", passed).run();
+    await db_(env).prepare(`INSERT INTO AppSettings (key, value) VALUES (?, ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value`).bind("SOCIETY_SYSTEM", passed).run();
   } catch (error) {
     console.error("Failed to apply society system:", error);
     return lines.concat(["", "制度変更の処理に失敗しました。", "現在の体制は変更されていません。", "管理者に確認してください。"]).join("\n");

@@ -33,7 +33,7 @@ export async function ensureSocietyTables_(env) {
         database.prepare(`CREATE TABLE IF NOT EXISTS PolicyVotes (userId TEXT NOT NULL, policy TEXT NOT NULL, vote TEXT NOT NULL, updatedAt INTEGER NOT NULL, PRIMARY KEY (userId, policy))`),
         database.prepare(`CREATE TABLE IF NOT EXISTS ExecutionVotes (userId TEXT NOT NULL, targetUserId TEXT NOT NULL, vote TEXT NOT NULL, updatedAt INTEGER NOT NULL, PRIMARY KEY (userId, targetUserId))`)
       ]);
-      await database.prepare(`INSERT INTO AppSettings (key, value) SELECT key, value FROM SocietyState ON CONFLICT(key) DO NOTHING`).run();
+      await database.prepare(`INSERT OR IGNORE INTO AppSettings (key, value) SELECT key, value FROM SocietyState`).run();
     })();
     societyTablesReady_.set(database, ready);
   }

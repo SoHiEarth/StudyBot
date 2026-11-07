@@ -48,9 +48,11 @@ export async function handleEvent_(event, env) {
     if (event.type === "message" || event.message?.type === "text") {
       if (text.startsWith("/追加") ||
         text.startsWith("/目標") ||
-        text.startsWith("/社会") ||
         text.startsWith("/概要") ||
-        text.startsWith("/時間")) {
+        text.startsWith("/時間")) { }
+      else {
+        const index = Math.floor(Math.random() * YOSHIMIZU_RESPONSES.length);
+        return { handled: true, answer: YOSHIMIZU_RESPONSES[index] };
       }
     } else {
       const index = Math.floor(Math.random() * YOSHIMIZU_RESPONSES.length);

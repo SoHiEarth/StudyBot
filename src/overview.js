@@ -1,6 +1,7 @@
 import { members_ } from "./member.js";
 import { CONFIG } from "./config.js";
 import { formatMinutes_, today_ } from "./date.js";
+import { studyStreak_ } from "./streak.js";
 
 export async function getOverview_(env) {
   const today = today_();
@@ -23,12 +24,14 @@ export async function getOverview_(env) {
       CONFIG.DAILY_CAP,
       m.dailyGoal + carry
     );
+    const streak = await studyStreak_(env, m.userId);
 
     lines.push(
       `#### ${m.displayName}`,
       `　目標　　　　：${formatMinutes_(target)}`,
       `　ペナルティー：${formatMinutes_(carry)}`,
       `　勉強時間　　：${formatMinutes_(actual)}`,
+      `　連続勉強日数：${streak}日`,
       ""
     );
   }

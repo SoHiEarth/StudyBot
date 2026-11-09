@@ -26,6 +26,7 @@ import {
 } from "./democracy.js";
 import { perestroika_ } from "./communism.js";
 import { voteOnExecution_, getExecutionStatus_ } from "./execution.js";
+import { studyDays_, studyDaysByName_ } from "./streak.js";
 
 export async function handleEvent_(event, env) {
   if (
@@ -49,7 +50,8 @@ export async function handleEvent_(event, env) {
       if (text.startsWith("/追加") ||
         text.startsWith("/目標") ||
         text.startsWith("/概要") ||
-        text.startsWith("/時間")) { }
+        text.startsWith("/時間") ||
+        text.startsWith("/勉強日数")) { }
       else {
         const index = Math.floor(Math.random() * YOSHIMIZU_RESPONSES.length);
         return { handled: true, answer: YOSHIMIZU_RESPONSES[index] };
@@ -155,6 +157,16 @@ export async function handleEvent_(event, env) {
           answer = await getTimeByName_(env, username);
         } else {
           answer = await getMyTime_(env, userId);
+        }
+      } else if ((match = text.match(/^\/勉強日数(?:\s+(.+))?$/))) {
+        const username = match[1];
+        if (username) {
+          answer = await studyDaysByName_(env, username);
+        } else {
+          const days = await studyDays_(env, userId);
+          answer = `## 勉強日数\n` +
+            `---\n` +
+            `**勉強日数**　　　　　　${days}日`;
         }
       } else if (/^\/巻き込む\s+確定$/.test(text)) {
         answer = await ForceJoinAll(env, event.source, userId);

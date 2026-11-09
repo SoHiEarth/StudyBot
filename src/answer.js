@@ -8,7 +8,8 @@ export function getFastAnswer_(event) {
         event.message.text.trim().startsWith("/目標") ||
         event.message.text.trim().startsWith("/社会") ||
         event.message.text.trim().startsWith("/概要") ||
-        event.message.text.trim().startsWith("/時間")) return null;
+        event.message.text.trim().startsWith("/時間") ||
+        event.message.text.trim().startsWith("/勉強日数")) return null;
     }
     const index = Math.floor(Math.random() * YOSHIMIZU_RESPONSES.length);
     return YOSHIMIZU_RESPONSES[index];

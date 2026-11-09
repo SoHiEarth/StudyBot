@@ -1,6 +1,7 @@
 import { CONFIG } from "./config.js";
 import { ensureMember_, studyMinutes_ } from "./member.js";
 import { formatMinutes_ } from "./date.js";
+import { recordStudyDay_, studyStreak_ } from "./streak.js";
 
 export async function studyMinutesByUser_(env) {
   const result = await env.DB.prepare(`
@@ -71,8 +72,11 @@ export async function addStudyTime_(env, userId, minutes) {
       `記録上限は${cap}分です。`;
   }
 
+  await recordStudyDay_(env, id, amount);
+  const streak = await studyStreak_(env, id);
   const total = await studyMinutes_(env, id);
 
   return `**${amount}**分追加しました。\n` +
-    `合計：**${formatMinutes_(total)}**`;
+    `合計：**${formatMinutes_(total)}**\n` +
+    `連続勉強日数：**${streak}日**`;
 }

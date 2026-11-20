@@ -63,6 +63,7 @@ export async function handleEvent_(event, env) {
   }
 
   let answer;
+  let imageUrl;
   let match;
   switch (text) {
     case "/概要":
@@ -216,11 +217,22 @@ export async function handleEvent_(event, env) {
           imageBeforeText: true,
           text: `${match[1]}っているのかな？`
         };
+        imageUrl =
+          "https://www.saitamaheisei.ed.jp/wp-content/uploads/2025/07/25jh-B-02.jpg";
       } else if ((match = text.match(/^\/否定\s+(.+)$/))) {
         answer = {
           imageBeforeText: true,
           text: `${match[1]}っていらないよね。`
         };
+        imageUrl =
+          "https://www.saitamaheisei.ed.jp/wp-content/uploads/2025/07/25jh-B-02.jpg";
+      } else if ((match = text.match(/^\/稲村\s+(.+)$/))) {
+        answer = {
+          imageBeforeText: true,
+          text: `${match[1]}スギィ!。`
+        };
+        imageUrl =
+          "https://raw.githubusercontent.com/SoHiEarth/StudyBot/refs/heads/main/src/assets/image.png";
       } else if (Object.hasOwn(pairs, text)) {
         answer = pairs[text];
       } else {
@@ -230,6 +242,7 @@ export async function handleEvent_(event, env) {
 
   return {
     handled: true,
+    imageUrl,
     answer: typeof answer === "object" && answer !== null
       ? answer
       : answer == null || String(answer).trim() === ""

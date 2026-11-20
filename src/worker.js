@@ -44,7 +44,8 @@ export default {
             const ok = await replyDirectly(
               event.replyToken,
               result.answer,
-              env
+              env,
+              result.imageUrl
             );
 
             if (!ok) {
@@ -132,7 +133,7 @@ async function verifySignature(body, signature, secret) {
   return diff === 0;
 }
 
-async function replyDirectly(replyToken, answer, env) {
+async function replyDirectly(replyToken, answer, env, imageUrl) {
   try {
     const messages = [];
 
@@ -141,9 +142,6 @@ async function replyDirectly(replyToken, answer, env) {
       answer !== null &&
       answer.imageBeforeText
     ) {
-      const imageUrl =
-        "https://www.saitamaheisei.ed.jp/wp-content/uploads/2025/07/25jh-B-02.jpg";
-
       messages.push({
         type: "image",
         originalContentUrl: imageUrl,

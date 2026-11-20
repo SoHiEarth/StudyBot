@@ -1,4 +1,4 @@
-import { formatAnswer_ } from "./answer.js";
+import { FAST_IMAGE_URL, formatAnswer_, getFastAnswer_ } from "./answer.js";
 import { handleEvent_ } from "./event.js";
 import { processDailyPenalty } from "./member.js";
 
@@ -36,7 +36,15 @@ export default {
         events.map(async (event) => {
           if (!event.replyToken) return;
           try {
-            const result = await handleEvent_(event, env);
+            const fastAnswer = getFastAnswer_(event);
+            const result = fastAnswer === null
+              ? await handleEvent_(event, env)
+              : {
+                handled: true,
+                answer: fastAnswer,
+                imageUrl: fastAnswer.imageUrl || FAST_IMAGE_URL
+              };
+
             if (!result || result.handled !== true) {
               return;
             }

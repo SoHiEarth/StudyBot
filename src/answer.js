@@ -1,26 +1,30 @@
 import { YOSHIMIZU_RESPONSES, pairs, gambleUsage_ } from "./special_responses.js";
 
+export const FAST_IMAGE_URL =
+  "https://www.saitamaheisei.ed.jp/wp-content/uploads/2025/07/25jh-B-02.jpg";
+
 export function getFastAnswer_(event) {
-  const userId = event.source && event.source.userId;
-  if (userId == "Ud4b21d16769707e877baea669277ea93") {
-    if (event.type === "message" || event.message?.type === "text") {
-      if (event.message.text.trim().startsWith("/追加") ||
-        event.message.text.trim().startsWith("/目標") ||
-        event.message.text.trim().startsWith("/社会") ||
-        event.message.text.trim().startsWith("/概要") ||
-        event.message.text.trim().startsWith("/時間") ||
-        event.message.text.trim().startsWith("/勉強日数")) return null;
-    }
-    const index = Math.floor(Math.random() * YOSHIMIZU_RESPONSES.length);
-    return YOSHIMIZU_RESPONSES[index];
-  }
   if (
-    event.type !== "message" ||
+    event?.type !== "message" ||
     event.message?.type !== "text"
   ) {
     return null;
   }
+
+  const userId = event.source?.userId;
   const text = event.message.text.trim();
+
+  if (userId == "Ud4b21d16769707e877baea669277ea93") {
+    if (text.startsWith("/追加") ||
+      text.startsWith("/目標") ||
+      text.startsWith("/社会") ||
+      text.startsWith("/概要") ||
+      text.startsWith("/時間") ||
+      text.startsWith("/勉強日数")) return null;
+
+    const index = Math.floor(Math.random() * YOSHIMIZU_RESPONSES.length);
+    return YOSHIMIZU_RESPONSES[index];
+  }
 
   if (text.startsWith("/教育")) {
     const match = text.match(/^\/教育\s+(.+)$/);
@@ -28,7 +32,8 @@ export function getFastAnswer_(event) {
     return match
       ? {
         imageBeforeText: true,
-        text: `${match[1]}っているのかな？`
+        text: `${match[1]}っているのかな？`,
+        imageUrl: FAST_IMAGE_URL
       }
       : null;
   }
@@ -39,7 +44,8 @@ export function getFastAnswer_(event) {
     return match
       ? {
         imageBeforeText: true,
-        text: `${match[1]}っていらないよね。`
+        text: `${match[1]}っていらないよね。`,
+        imageUrl: FAST_IMAGE_URL
       }
       : null;
   }

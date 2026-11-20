@@ -121,8 +121,10 @@ export async function voteOnPolicy_(env, userId, policyName, voteName) {
   if (await societySystem_(env) !== "democracy") return "現在の社会体制が**民主主義**ではないため、政策機能は使えません。";
   const members = await members_(env);
   if (!memberIdSet_(members).has(id)) return "登録メンバーのみ投票できます。";
-  await db_(env).prepare(`INSERT INTO PolicyVotes (userId, policy, vote, updatedAt) VALUES (?, ?, ?, ?) ON CONFLICT(userId, policy) DO UPDATE SET vote = excluded.vote, updatedAt = excluded.updatedAt`).bind(id, policy, vote, Date.now()).run();
-  const result = await db_(env).prepare("SELECT userId, vote FROM PolicyVotes WHERE policy = ? ORDER BY updatedAt, rowid").bind(policy).all();
+  const [, result] = await db_(env).batch([
+    db_(env).prepare(`INSERT INTO PolicyVotes (userId, policy, vote, updatedAt) VALUES (?, ?, ?, ?) ON CONFLICT(userId, policy) DO UPDATE SET vote = excluded.vote, updatedAt = excluded.updatedAt`).bind(id, policy, vote, Date.now()),
+    db_(env).prepare("SELECT userId, vote FROM PolicyVotes WHERE policy = ? ORDER BY updatedAt, rowid").bind(policy)
+  ]);
   const votes = new Map();
   const ids = memberIdSet_(members);
   for (const row of result.results || []) if (ids.has(String(row.userId).trim())) votes.set(row.userId, row.vote);
@@ -135,9 +137,25 @@ export async function voteOnPolicy_(env, userId, policyName, voteName) {
 
 export async function getDemocracyPolicyStatus_(env) {
   await ensureSocietyTables_(env);
-  if (await societySystem_(env) !== "democracy") return "現在の社会体制が**民主主義**ではないため、政策機能は使えません。";
+  const keys = [
+    "SOCIETY_SYSTEM",
+    ...Object.values(POLICY_CONFIG_).map(config => config.property)
+  ];
+  const result = await db_(env).prepare(`
+    SELECT key, value
+    FROM AppSettings
+    WHERE key IN (${keys.map(() => "?").join(", ")})
+  `).bind(...keys).all();
+  const states = new Map(
+    (result.results || []).map(row => [row.key, row.value])
+  );
+  if (states.get("SOCIETY_SYSTEM") !== "democracy") {
+    return "現在の社会体制が**民主主義**ではないため、政策機能は使えません。";
+  }
   const lines = ["## 民主主義の政策", "---", "現在の体制：民主主義", ""];
-  for (const config of Object.values(POLICY_CONFIG_)) lines.push(config.name + "：" + ((await state_(env, config.property)) === "true" ? "有効" : "無効"));
+  for (const config of Object.values(POLICY_CONFIG_)) {
+    lines.push(config.name + "：" + (states.get(config.property) === "true" ? "有効" : "無効"));
+  }
   return lines.concat(["", "投票方法：", "/政策 ペナルティ軽減 賛成", "/政策 ペナルティ軽減 反対", "/政策 抽選確率アップ 賛成", "/政策 抽選確率アップ 反対"]).join("\n");
 }
 

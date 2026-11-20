@@ -69,13 +69,21 @@ export async function ensureMember_(env, userId, source) {
 
   const db = getDB_(env);
 
-  await db.prepare(`
-    INSERT OR IGNORE INTO Members
-      (userId, displayName, studyMinutes, dailyGoal, carryMinutes)
-    VALUES (?, '名前未設定', 0, ?, 0)
-  `).bind(id, CONFIG.DEFAULT_GOAL).run();
+  const [insertResult, memberResult] = await db.batch([
+    db.prepare(`
+      INSERT OR IGNORE INTO Members
+        (userId, displayName, studyMinutes, dailyGoal, carryMinutes)
+      VALUES (?, '名前未設定', 0, ?, 0)
+    `).bind(id, CONFIG.DEFAULT_GOAL),
+    db.prepare(`
+      SELECT userId, displayName, studyMinutes, dailyGoal, carryMinutes
+      FROM Members
+      WHERE userId = ?
+    `).bind(id)
+  ]);
+  void insertResult;
 
-  let member = await findMember_(env, id);
+  let member = normalizeMember_(memberResult.results?.[0]);
 
   if (
     member &&

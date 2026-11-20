@@ -44,8 +44,10 @@ export async function voteOnExecution_(env, userId, targetName, voteName) {
   const target = matches[0];
   if (voterId === target.userId) return "自分自身には投票できません。";
   if (system === "communism") return executeMember_(env, target.userId);
-  await db_(env).prepare(`INSERT INTO ExecutionVotes (userId, targetUserId, vote, updatedAt) VALUES (?, ?, ?, ?) ON CONFLICT(userId, targetUserId) DO UPDATE SET vote = excluded.vote, updatedAt = excluded.updatedAt`).bind(voterId, target.userId, vote, Date.now()).run();
-  const result = await db_(env).prepare("SELECT userId, vote FROM ExecutionVotes WHERE targetUserId = ? ORDER BY updatedAt, rowid").bind(target.userId).all();
+  const [, result] = await db_(env).batch([
+    db_(env).prepare(`INSERT INTO ExecutionVotes (userId, targetUserId, vote, updatedAt) VALUES (?, ?, ?, ?) ON CONFLICT(userId, targetUserId) DO UPDATE SET vote = excluded.vote, updatedAt = excluded.updatedAt`).bind(voterId, target.userId, vote, Date.now()),
+    db_(env).prepare("SELECT userId, vote FROM ExecutionVotes WHERE targetUserId = ? ORDER BY updatedAt, rowid").bind(target.userId)
+  ]);
   const latest = new Map();
   for (const row of result.results || []) latest.set(row.userId, row.vote);
   let yes = 0; let no = 0;

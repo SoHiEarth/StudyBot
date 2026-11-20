@@ -192,23 +192,23 @@ export async function startRoulette_(env, source) {
     );
 
   // Increment carryover directly in D1.
-  const update = await db.prepare(`
-    UPDATE Members
-    SET carryMinutes = COALESCE(carryMinutes, 0) + ?
-    WHERE userId = ?
-  `).bind(penalty, loser.userId).run();
+  const [update] = await db.batch([
+    db.prepare(`
+      UPDATE Members
+      SET carryMinutes = COALESCE(carryMinutes, 0) + ?
+      WHERE userId = ?
+    `).bind(penalty, loser.userId),
+    db.prepare(`
+      DELETE FROM RouletteParticipants
+      WHERE chatKey = ?
+    `).bind(chatKey)
+  ]);
 
   if (update.meta.changes !== 1) {
     throw new Error(
       "Failed to apply roulette penalty to " + loser.userId
     );
   }
-
-  // Clear this chat's participants after applying the penalty.
-  await db.prepare(`
-    DELETE FROM RouletteParticipants
-    WHERE chatKey = ?
-  `).bind(chatKey).run();
 
   return "## ルーレットの結果\n" +
     `**💀 ${loser.name} が当たりました！**\n` +
@@ -258,23 +258,24 @@ export async function ForceJoinAll(env, source, userId) {
   const db = env.DB;
   const chatKey = rouletteChatKey_(source, id);
 
-  const memberResult = await db.prepare(`
-    SELECT userId, displayName
-    FROM Members
-    WHERE TRIM(COALESCE(userId, '')) <> ''
-  `).all();
+  const [memberResult, existingResult] = await db.batch([
+    db.prepare(`
+      SELECT userId, displayName
+      FROM Members
+      WHERE TRIM(COALESCE(userId, '')) <> ''
+    `),
+    db.prepare(`
+      SELECT userId
+      FROM RouletteParticipants
+      WHERE chatKey = ?
+    `).bind(chatKey)
+  ]);
 
   const members = memberResult.results || [];
 
   if (members.length === 0) {
     return "登録済みのメンバーがいません。";
   }
-
-  const existingResult = await db.prepare(`
-    SELECT userId
-    FROM RouletteParticipants
-    WHERE chatKey = ?
-  `).bind(chatKey).all();
 
   const existingIds = new Set(
     (existingResult.results || []).map(
@@ -285,6 +286,8 @@ export async function ForceJoinAll(env, source, userId) {
   let additions = 0;
   const now = new Date().toISOString();
 
+  const additionsToInsert = [];
+  const additionIds = [];
   for (const member of members) {
     const memberId = String(member.userId).trim();
 
@@ -297,7 +300,7 @@ export async function ForceJoinAll(env, source, userId) {
       member.displayName ||
       "名前未設定";
 
-    const result = await db.prepare(`
+    additionsToInsert.push(db.prepare(`
       INSERT OR IGNORE INTO RouletteParticipants
         (chatKey, userId, displayName, joinedAt)
       VALUES (?, ?, ?, ?)
@@ -306,12 +309,18 @@ export async function ForceJoinAll(env, source, userId) {
       memberId,
       name,
       now
-    ).run();
+    ));
+    additionIds.push(memberId);
+  }
 
-    if (result.meta.changes > 0) {
-      additions++;
-      existingIds.add(memberId);
-    }
+  if (additionsToInsert.length) {
+    const results = await db.batch(additionsToInsert);
+    results.forEach((result, index) => {
+      if (result.meta.changes > 0) {
+        additions++;
+        existingIds.add(additionIds[index]);
+      }
+    });
   }
 
   const extraPenalty = Math.min(
